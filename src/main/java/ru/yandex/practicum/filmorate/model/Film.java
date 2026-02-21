@@ -24,7 +24,7 @@ public class Film {
     @Size(max = 200, message = "{film.description.size}")
     private String description;
 
-    @MinDate(value = "28.12.1895", message = "{film.releaseDate.mindate}")
+    @MinDate(value = "1895-12-28", message = "{film.releaseDate.mindate}")
     private LocalDate releaseDate;
 
     @Positive(message = "{film.duration.positive}")
