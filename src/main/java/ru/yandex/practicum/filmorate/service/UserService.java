@@ -26,6 +26,9 @@ public class UserService {
 
     public User update(User user) {
         if (userMap.containsKey(user.getId())) {
+            if (isUserNameEmpty(user)) {
+                user.setName(user.getLogin());
+            }
             userMap.put(user.getId(), user);
             return user;
         }
