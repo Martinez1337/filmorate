@@ -67,12 +67,14 @@ public class UserControllerTest {
         request.setEmail("user@example.com");
         request.setLogin("userlogin");
         request.setName("User");
+        request.setBirthday(LocalDate.now());
 
         User created = new User();
         created.setId(1);
         created.setEmail(request.getEmail());
         created.setLogin(request.getLogin());
         created.setName(request.getName());
+        created.setBirthday(request.getBirthday());
 
         when(userService.create(any(User.class))).thenReturn(created);
 

@@ -26,6 +26,7 @@ public class Film {
 
     @NotNull(message = "{film.releaseDate.notnull}")
     @MinDate(value = "1895-12-28", message = "{film.releaseDate.mindate}")
+    @PastOrPresent(message = "{film.releaseDate.pastorpresent}")
     private LocalDate releaseDate;
 
     @NotNull(message = "{film.duration.notnull}")

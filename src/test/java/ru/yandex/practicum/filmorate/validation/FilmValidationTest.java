@@ -55,4 +55,13 @@ public class FilmValidationTest extends ValidationBaseTest {
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertTrue(violations.stream().noneMatch(v -> v.getPropertyPath().toString().equals("releaseDate")), "releaseDate на границе (1895-12-28) должен проходить валидацию");
     }
+
+    @Test
+    void film_futureReleaseDate_constraintViolation() {
+        Film film = new Film();
+        film.setReleaseDate(LocalDate.now().plusDays(1));
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("releaseDate")), "Ожидается ошибка для releaseDate в будущем");
+    }
 }

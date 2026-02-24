@@ -19,6 +19,6 @@ public class MinDateValidator implements ConstraintValidator<MinDate, LocalDate>
         if (value == null) {
             return true;
         }
-        return value.isAfter(minDate);
+        return !value.isBefore(minDate);
     }
 }
