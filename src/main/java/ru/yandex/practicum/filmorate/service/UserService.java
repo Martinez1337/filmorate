@@ -16,7 +16,7 @@ public class UserService {
     public User create(User user) {
         user.setId(++currentId);
 
-        if (user.getName() == null || user.getName().isBlank()) {
+        if (isUserNameEmpty(user)) {
             user.setName(user.getLogin());
         }
 
@@ -34,5 +34,9 @@ public class UserService {
 
     public Collection<User> findAll() {
         return userMap.values();
+    }
+
+    private boolean isUserNameEmpty(User user) {
+        return user.getName() == null || user.getName().isBlank();
     }
 }

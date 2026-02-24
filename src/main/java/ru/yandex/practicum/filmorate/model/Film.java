@@ -24,9 +24,11 @@ public class Film {
     @Size(max = 200, message = "{film.description.size}")
     private String description;
 
+    @NotNull(message = "{film.releaseDate.notnull}")
     @MinDate(value = "1895-12-28", message = "{film.releaseDate.mindate}")
     private LocalDate releaseDate;
 
+    @NotNull(message = "{film.duration.notnull}")
     @Positive(message = "{film.duration.positive}")
     private Integer duration;
 }

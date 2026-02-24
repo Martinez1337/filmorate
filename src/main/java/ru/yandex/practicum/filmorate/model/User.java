@@ -27,6 +27,7 @@ public class User {
 
     private String name;
 
+    @NotNull(message = "{user.birthday.notnull}")
     @PastOrPresent(message = "{user.birthday.pastorpresent}")
     private LocalDate birthday;
 }
