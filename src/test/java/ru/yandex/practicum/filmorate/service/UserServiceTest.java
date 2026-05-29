@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.util.Collection;
 
@@ -15,7 +16,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserService();
+        service = new UserService(new InMemoryUserStorage());
     }
 
     @Test
@@ -34,7 +35,7 @@ class UserServiceTest {
     }
 
     @Test
-    void create_nameNull_setsNameToLogin() {
+    void create_nameNull_keepsNameNull() {
         User user = new User();
         user.setEmail("a@b.com");
         user.setLogin("alice");
@@ -42,11 +43,11 @@ class UserServiceTest {
 
         User created = service.create(user);
 
-        assertEquals("alice", created.getName(), "Если name == null, он должен быть заменён на login");
+        assertNull(created.getName(), "Сервис должен сохранять пользователя без подстановки name");
     }
 
     @Test
-    void create_nameBlank_setsNameToLogin() {
+    void create_nameBlank_keepsProvidedName() {
         User user = new User();
         user.setEmail("c@d.com");
         user.setLogin("charlie");
@@ -54,7 +55,7 @@ class UserServiceTest {
 
         User created = service.create(user);
 
-        assertEquals("charlie", created.getName(), "Если name пустая строка, он должен быть заменён на login");
+        assertEquals("   ", created.getName(), "Сервис должен сохранять переданное значение name");
     }
 
     @Test
@@ -75,7 +76,7 @@ class UserServiceTest {
         original.setEmail("orig@example.com");
         original.setLogin("origlogin");
         service.create(original);
-        int id = original.getId();
+        Long id = original.getId();
 
         User updated = new User();
         updated.setId(id);
@@ -94,7 +95,7 @@ class UserServiceTest {
     @Test
     void update_nonExistingUser_throwsNotFoundException() {
         User user = new User();
-        user.setId(999);
+        user.setId(999L);
 
         assertThrows(NotFoundException.class, () -> service.update(user),
                 "Ожидается NotFoundException при обновлении несуществующего пользователя");
