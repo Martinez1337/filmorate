@@ -15,12 +15,22 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ProblemDetail handleNotFound(NotFoundException e) {
+    public ProblemDetail handleNotFound(NotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND,
-                e.getMessage()
+                ex.getMessage()
         );
-        log.error("NotFoundException occurred. Problem details: {}", problemDetail);
+        log.warn("NotFoundException occurred. Problem details: {}", problemDetail);
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ProblemDetail handleValidation(ValidationException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+        log.warn("ValidationException occurred. Problem details: {}", problemDetail);
         return problemDetail;
     }
 
@@ -43,8 +53,17 @@ public class GlobalExceptionHandler {
                 .toList();
 
         problemDetail.setProperty("errors", fieldErrors);
-        log.error("Validation error occurred. Problem details: {}", problemDetail);
+        log.warn("Validation error occurred. Problem details: {}", problemDetail);
+        return problemDetail;
+    }
 
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleException(Exception ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage()
+        );
+        log.error("Exception occurred. Problem details: {}", problemDetail);
         return problemDetail;
     }
 }
