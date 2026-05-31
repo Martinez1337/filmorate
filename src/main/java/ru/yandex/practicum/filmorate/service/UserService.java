@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.dto.mapping.UserMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -17,37 +19,46 @@ import java.util.Set;
 @Service
 public class UserService {
     private final UserStorage userStorage;
+    private final UserMapper userMapper;
 
     public UserService(
-            @Qualifier("inMemoryUserStorage") UserStorage userStorage
+            @Qualifier("inMemoryUserStorage") UserStorage userStorage,
+            UserMapper userMapper
     ) {
         this.userStorage = userStorage;
+        this.userMapper = userMapper;
     }
 
-    public User create(User user) {
-        User createdUser =  userStorage.createUser(user);
+    public UserDto create(UserDto userDto) {
+        User createdUser =  userStorage.createUser(userMapper.map(userDto));
         log.info("Created user: {}", createdUser);
-        return createdUser;
+        return userMapper.mapToDto(createdUser);
     }
 
-    public User update(User user) {
+    public UserDto update(UserDto userDto) {
+        User user = userMapper.map(userDto);
+        getUserOrThrow(user.getId());
         User updatedUser = userStorage.updateUser(user)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         log.info("Updated user: {}", updatedUser);
-        return updatedUser;
+        return userMapper.mapToDto(updatedUser);
     }
 
-    public Collection<User> findAll() {
-        return userStorage.getAllUsers();
+    public Collection<UserDto> findAll() {
+        return userStorage.getAllUsers()
+                .stream()
+                .map(userMapper::mapToDto)
+                .toList();
     }
 
-    public User findById(Long id) {
+    public UserDto findById(Long id) {
         User user = getUserOrThrow(id);
         log.info("User: {}", user);
-        return user;
+        return userMapper.mapToDto(user);
     }
 
     public void deleteById(Long id) {
+        getUserOrThrow(id);
         userStorage.deleteUserById(id);
         log.info("Deleted user: {}", id);
     }
@@ -72,15 +83,16 @@ public class UserService {
         friend.getFriends().remove(userId);
     }
 
-    public Collection<User> getFriends(Long userId) {
+    public Collection<UserDto> getFriends(Long userId) {
         User user = getUserOrThrow(userId);
 
         return user.getFriends().stream()
                 .map(this::getUserOrThrow)
+                .map(userMapper::mapToDto)
                 .toList();
     }
 
-    public Collection<User> getCommonFriends(Long userId,  Long friendId) {
+    public Collection<UserDto> getCommonFriends(Long userId,  Long friendId) {
         validateFriendId(userId, friendId);
 
         User user = getUserOrThrow(userId);
@@ -91,6 +103,7 @@ public class UserService {
 
         return commonFriends.stream()
                 .map(this::getUserOrThrow)
+                .map(userMapper::mapToDto)
                 .toList();
     }
 

@@ -13,6 +13,8 @@ public interface FilmStorage {
 
     Collection<Film> getAllFilms();
 
+    Collection<Film> getPopularFilms(int count);
+
     Optional<Film> updateFilm(Film film);
 
     void deleteFilmById(Long id);

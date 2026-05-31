@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
-import ru.yandex.practicum.filmorate.dto.mapping.FilmMapper;
 import ru.yandex.practicum.filmorate.dto.validation.groups.OnUpdate;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -20,33 +19,29 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class FilmController {
     private final FilmService filmService;
-    private final FilmMapper filmMapper;
 
     @PostMapping
     public FilmDto createFilm(@Valid @RequestBody FilmDto filmDto) {
         log.info("Received a request to create a movie: {}", filmDto);
-        return filmMapper.mapToDto(filmService.create(filmMapper.map(filmDto)));
+        return filmService.create(filmDto);
     }
 
     @PutMapping
     public FilmDto updateFilm(@Validated({Default.class, OnUpdate.class}) @RequestBody FilmDto filmDto) {
         log.info("Received a request to update the movie with id: {}", filmDto.getId());
-        return filmMapper.mapToDto(filmService.update(filmMapper.map(filmDto)));
+        return filmService.update(filmDto);
     }
 
     @GetMapping("/{id}")
     public FilmDto getFilmById(@Positive @PathVariable Long id) {
         log.info("Received a request to get the film with id: {}", id);
-        return filmMapper.mapToDto(filmService.findById(id));
+        return filmService.findById(id);
     }
 
     @GetMapping
     public Collection<FilmDto> findAll() {
         log.info("A request for a list of all films has been received");
-        return filmService.findAll()
-                .stream()
-                .map(filmMapper::mapToDto)
-                .toList();
+        return filmService.findAll();
     }
 
     @DeleteMapping("/{id}")
@@ -78,8 +73,6 @@ public class FilmController {
             @RequestParam(defaultValue = "10") @Positive int count
     ) {
         log.info("Received a request to get the popular films has been received");
-        return filmService.getPopular(count).stream()
-                .map(filmMapper::mapToDto)
-                .toList();
+        return filmService.getPopular(count);
     }
 }

@@ -28,6 +28,18 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
+    public Collection<Film> getPopularFilms(int count) {
+        return filmMap.values().stream()
+                .sorted(
+                        Comparator.comparingInt((Film film) -> film.getLikes().size())
+                                .reversed()
+                                .thenComparing(Film::getId)
+                )
+                .limit(count)
+                .toList();
+    }
+
+    @Override
     public Optional<Film> updateFilm(Film film) {
         if (filmMap.containsKey(film.getId())) {
             filmMap.put(film.getId(), film);
