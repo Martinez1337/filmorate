@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,6 +51,23 @@ class InMemoryFilmStorageTest {
         assertEquals(2, result.size());
         assertTrue(result.contains(first));
         assertTrue(result.contains(second));
+    }
+
+    @Test
+    void getPopularFilms_returnsFilmsSortedByLikesAndLimitedByCount() {
+        Film first = storage.createFilm(new Film());
+        Film second = storage.createFilm(new Film());
+        Film third = storage.createFilm(new Film());
+        first.getLikes().add(1L);
+        second.getLikes().add(1L);
+        second.getLikes().add(2L);
+        third.getLikes().add(1L);
+        third.getLikes().add(2L);
+        third.getLikes().add(3L);
+
+        List<Film> result = storage.getPopularFilms(2).stream().toList();
+
+        assertEquals(List.of(third, second), result);
     }
 
     @Test
