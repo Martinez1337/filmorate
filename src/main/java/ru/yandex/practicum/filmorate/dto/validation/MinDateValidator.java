@@ -1,8 +1,8 @@
-package ru.yandex.practicum.filmorate.validation;
+package ru.yandex.practicum.filmorate.dto.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import ru.yandex.practicum.filmorate.validation.annotation.MinDate;
+import ru.yandex.practicum.filmorate.dto.validation.annotation.MinDate;
 
 import java.time.LocalDate;
 
