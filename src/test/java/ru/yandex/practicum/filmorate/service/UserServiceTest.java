@@ -101,4 +101,22 @@ class UserServiceTest {
         assertThrows(NotFoundException.class, () -> service.update(user),
                 "Ожидается NotFoundException при обновлении несуществующего пользователя");
     }
+
+    @Test
+    void addFriend_addsFriendOnlyToRequester() {
+        UserDto first = new UserDto();
+        first.setEmail("first@example.com");
+        first.setLogin("first");
+        UserDto createdFirst = service.create(first);
+
+        UserDto second = new UserDto();
+        second.setEmail("second@example.com");
+        second.setLogin("second");
+        UserDto createdSecond = service.create(second);
+
+        service.addFriend(createdFirst.getId(), createdSecond.getId());
+
+        assertEquals(1, service.getFriends(createdFirst.getId()).size());
+        assertEquals(0, service.getFriends(createdSecond.getId()).size());
+    }
 }
