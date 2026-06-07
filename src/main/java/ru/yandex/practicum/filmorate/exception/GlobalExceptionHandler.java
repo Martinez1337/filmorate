@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler({Exception.class, InternalServerException.class})
     public ProblemDetail handleException(Exception ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,

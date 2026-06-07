@@ -1,0 +1,17 @@
+package ru.yandex.practicum.filmorate.dto.mapping;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
+import ru.yandex.practicum.filmorate.dto.IdDto;
+import ru.yandex.practicum.filmorate.model.Genre;
+
+@Mapper(componentModel = "spring")
+public interface GenreMapper {
+    GenreDto mapToDto(Genre genre);
+
+    Genre map(GenreDto genreDto);
+
+    @Mapping(target = "name", ignore = true)
+    Genre map(IdDto idDto);
+}

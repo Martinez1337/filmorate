@@ -9,7 +9,7 @@ public interface FilmStorage {
 
     Film createFilm(Film film);
 
-    Optional<Film> getFilmById(Long id);
+    Optional<Film> getFilmById(long id);
 
     Collection<Film> getAllFilms();
 
@@ -17,5 +17,13 @@ public interface FilmStorage {
 
     Optional<Film> updateFilm(Film film);
 
-    void deleteFilmById(Long id);
+    void deleteFilmById(long id);
+
+    default void addLike(long filmId, long userId) {
+        getFilmById(filmId).ifPresent(film -> film.getLikes().add(userId));
+    }
+
+    default void removeLike(long filmId, long userId) {
+        getFilmById(filmId).ifPresent(film -> film.getLikes().remove(userId));
+    }
 }

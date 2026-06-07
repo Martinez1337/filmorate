@@ -18,7 +18,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> getUserById(Long id) {
+    public Optional<User> getUserById(long id) {
         return Optional.ofNullable(userMap.get(id));
     }
 
@@ -37,7 +37,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void deleteUserById(Long id) {
+    public void deleteUserById(long id) {
         userMap.remove(id);
     }
 

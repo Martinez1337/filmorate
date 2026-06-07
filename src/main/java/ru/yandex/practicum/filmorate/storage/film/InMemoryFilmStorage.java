@@ -18,7 +18,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> getFilmById(Long id) {
+    public Optional<Film> getFilmById(long id) {
         return Optional.ofNullable(filmMap.get(id));
     }
 
@@ -49,7 +49,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void deleteFilmById(Long id) {
+    public void deleteFilmById(long id) {
         filmMap.remove(id);
     }
 
