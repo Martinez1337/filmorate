@@ -7,9 +7,7 @@ import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mapping.UserRowMapper;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 public class UserDbStorage extends BaseRepository<User> implements UserStorage {
@@ -40,7 +38,21 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
             VALUES (?, ?)
             """;
     private static final String REMOVE_FRIEND_SQL = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-    private static final String GET_FRIENDS_SQL = "SELECT friend_id FROM friends WHERE user_id = ?";
+    private static final String GET_FRIENDS_SQL = """
+            SELECT DISTINCT u.id, u.email, u.login, u.name, u.birthday
+            FROM friends f
+            JOIN users u ON u.id = f.friend_id
+            WHERE f.user_id = ?
+            ORDER BY u.id
+            """;
+    private static final String GET_COMMON_FRIENDS_SQL = """
+            SELECT DISTINCT u.id, u.email, u.login, u.name, u.birthday
+            FROM friends f1
+            JOIN friends f2 ON f1.friend_id = f2.friend_id
+            JOIN users u ON u.id = f1.friend_id
+            WHERE f1.user_id = ? AND f2.user_id = ?
+            ORDER BY u.id
+            """;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate, new UserRowMapper());
@@ -55,16 +67,12 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
 
     @Override
     public Optional<User> getUserById(long id) {
-        Optional<User> user = findOne(GET_USER_BY_ID_SQL, id);
-        user.ifPresent(this::loadFriends);
-        return user;
+        return findOne(GET_USER_BY_ID_SQL, id);
     }
 
     @Override
     public Collection<User> getAllUsers() {
-        Collection<User> users = findMany(GET_ALL_USERS_SQL);
-        users.forEach(this::loadFriends);
-        return users;
+        return findMany(GET_ALL_USERS_SQL);
     }
 
     @Override
@@ -77,11 +85,9 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
                 user.getBirthday(),
                 user.getId()
         );
-
         if (updatedRows == 0) {
             return Optional.empty();
         }
-        loadFriends(user);
         return Optional.of(user);
     }
 
@@ -102,8 +108,13 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
         jdbc.update(REMOVE_FRIEND_SQL, userId, friendId);
     }
 
-    private void loadFriends(User user) {
-        Set<Long> friends = new HashSet<>(jdbc.queryForList(GET_FRIENDS_SQL, Long.class, user.getId()));
-        user.setFriends(friends);
+    @Override
+    public Collection<User> getUserFriends(long userId) {
+        return jdbc.query(GET_FRIENDS_SQL, mapper, userId);
+    }
+
+    @Override
+    public Collection<User> getCommonFriends(long userId, long friendId) {
+        return jdbc.query(GET_COMMON_FRIENDS_SQL, mapper, userId, friendId);
     }
 }

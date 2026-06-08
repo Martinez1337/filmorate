@@ -24,4 +24,8 @@ public interface UserStorage {
     default void removeFriend(long userId, long friendId) {
         getUserById(userId).ifPresent(user -> user.getFriends().remove(friendId));
     }
+
+    Collection<User> getUserFriends(long userId);
+
+    Collection<User> getCommonFriends(long userId, long friendId);
 }

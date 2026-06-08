@@ -6,13 +6,12 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mapping.GenreRowMapper;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -20,6 +19,12 @@ public class GenreDbStorage extends BaseRepository<Genre> implements GenreStorag
 
     private static final String GET_GENRE_BY_ID_SQL = "SELECT id, name FROM genres WHERE id = ?";
     private static final String GET_ALL_GENRES_SQL = "SELECT id, name FROM genres ORDER BY id";
+    private static final String GET_GENRES_BY_IDS_SQL = """
+            SELECT id, name
+            FROM genres
+            WHERE id IN (:ids)
+            ORDER BY id
+            """;
     private static final String GET_GENRES_FOR_FILMS_SQL = """
             SELECT fg.film_id, g.id, g.name
             FROM film_genres AS fg
@@ -43,12 +48,29 @@ public class GenreDbStorage extends BaseRepository<Genre> implements GenreStorag
     }
 
     @Override
+    public List<Genre> getGenresByIds(Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+
+        String placeholders = ids.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(", "));
+        String query = GET_GENRES_BY_IDS_SQL.replace(":ids", placeholders);
+        List<Object> params = ids.stream()
+                .map(id -> (Object) id)
+                .toList();
+
+        return jdbc.query(query, mapper, params.toArray());
+    }
+
+    @Override
     public Collection<Genre> getAllGenres() {
         return findMany(GET_ALL_GENRES_SQL);
     }
 
     @Override
-    public Map<Integer, Set<Genre>> getGenresForFilms(Collection<Long> ids) {
+    public Map<Long, List<Genre>> getGenresForFilms(Collection<Long> ids) {
         if (ids.isEmpty()) {
             return Map.of();
         }
@@ -62,10 +84,10 @@ public class GenreDbStorage extends BaseRepository<Genre> implements GenreStorag
                 .toList();
 
         return jdbc.query(query, rs -> {
-            Map<Integer, Set<Genre>> genresByFilmId = new HashMap<>();
+            Map<Long, List<Genre>> genresByFilmId = new HashMap<>();
             while (rs.next()) {
                 genresByFilmId
-                        .computeIfAbsent(rs.getInt("film_id"), filmId -> new LinkedHashSet<>())
+                        .computeIfAbsent(rs.getLong("film_id"), filmId -> new ArrayList<>())
                         .add(mapper.mapRow(rs, rs.getRow()));
             }
             return genresByFilmId;

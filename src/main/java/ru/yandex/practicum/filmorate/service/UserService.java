@@ -11,9 +11,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -82,25 +80,18 @@ public class UserService {
     }
 
     public Collection<UserDto> getFriends(long userId) {
-        User user = getUserOrThrow(userId);
-
-        return user.getFriends().stream()
-                .map(this::getUserOrThrow)
+        getUserOrThrow(userId);
+        return userStorage.getUserFriends(userId).stream()
                 .map(userMapper::mapToDto)
                 .toList();
     }
 
     public Collection<UserDto> getCommonFriends(long userId,  long friendId) {
         validateFriendId(userId, friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
 
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-
-        Set<Long> commonFriends = new HashSet<>(user.getFriends());
-        commonFriends.retainAll(friend.getFriends());
-
-        return commonFriends.stream()
-                .map(this::getUserOrThrow)
+        return userStorage.getCommonFriends(userId, friendId).stream()
                 .map(userMapper::mapToDto)
                 .toList();
     }

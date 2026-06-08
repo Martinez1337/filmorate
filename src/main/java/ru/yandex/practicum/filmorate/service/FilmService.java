@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.dto.FilmRequestDto;
 import ru.yandex.practicum.filmorate.dto.FilmResponseDto;
 import ru.yandex.practicum.filmorate.dto.mapping.FilmMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -18,6 +19,9 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -47,7 +51,7 @@ public class FilmService {
         validateFilmReferences(film);
         Film createdFilm = filmStorage.createFilm(film);
         log.info("Created film: {}", createdFilm);
-        return mapToResponseDto(createdFilm);
+        return filmMapper.mapToRsDto(createdFilm);
     }
 
     public FilmResponseDto update(FilmRequestDto filmRequestDto) {
@@ -57,14 +61,11 @@ public class FilmService {
         Film updatedFilm = filmStorage.updateFilm(film)
                 .orElseThrow(() -> new NotFoundException("Film not found"));
         log.info("Updated film: {}", updatedFilm);
-        return mapToResponseDto(updatedFilm);
+        return filmMapper.mapToRsDto(updatedFilm);
     }
 
     public Collection<FilmResponseDto> findAll() {
-        return filmStorage.getAllFilms()
-                .stream()
-                .map(this::mapToResponseDto)
-                .toList();
+        return mapFilmsToResponseDto(filmStorage.getAllFilms());
     }
 
     public FilmResponseDto findById(long id) {
@@ -95,8 +96,21 @@ public class FilmService {
         if (count < 0) {
             count = 10;
         }
-        return filmStorage.getPopularFilms(count).stream()
-                .map(this::mapToResponseDto)
+        return mapFilmsToResponseDto(filmStorage.getPopularFilms(count));
+    }
+
+    private Collection<FilmResponseDto> mapFilmsToResponseDto(Collection<Film> films) {
+        Map<Long, List<Genre>> genresByFilmId = genreStorage.getGenresForFilms(
+                films.stream()
+                        .map(Film::getId)
+                        .toList()
+        );
+
+        return films.stream()
+                .map(film -> {
+                    film.setGenres(new LinkedHashSet<>(genresByFilmId.getOrDefault(film.getId(), List.of())));
+                    return filmMapper.mapToRsDto(film);
+                })
                 .toList();
     }
 
@@ -115,19 +129,31 @@ public class FilmService {
             film.setMpa(getMpaOrThrow(film.getMpa().getId()));
         }
         Collection<Genre> genres = film.getGenres().stream()
-                .map(genre -> getGenreOrThrow(genre.getId()))
+                .map(genre -> genre.getName() == null ? getGenreOrThrow(genre.getId()) : genre)
                 .sorted(Comparator.comparing(Genre::getId))
                 .toList();
-        film.setGenres(new java.util.LinkedHashSet<>(genres));
+        film.setGenres(new LinkedHashSet<>(genres));
         return filmMapper.mapToRsDto(film);
     }
 
     private void validateFilmReferences(Film film) {
         if (film.getMpa() != null && film.getMpa().getId() != null) {
-            getMpaOrThrow(film.getMpa().getId());
+            film.setMpa(getMpaOrThrow(film.getMpa().getId()));
+        } else {
+            throw new ValidationException("Film references must contain an MPA");
         }
         if (film.getGenres() != null) {
-            film.getGenres().forEach(genre -> getGenreOrThrow(genre.getId()));
+            List<Long> genresIds = film.getGenres().stream()
+                    .map(Genre::getId)
+                    .distinct()
+                    .toList();
+            List<Genre> storedGenres = genreStorage.getGenresByIds(genresIds);
+
+            if (genresIds.size() != storedGenres.size()) {
+                throw new NotFoundException("Some genre ids were not found");
+            }
+
+            film.setGenres(new LinkedHashSet<>(storedGenres));
         }
     }
 

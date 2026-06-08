@@ -6,12 +6,14 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.BaseRepository;
 import ru.yandex.practicum.filmorate.storage.mapping.FilmRowMapper;
+import ru.yandex.practicum.filmorate.storage.mapping.GenreRowMapper;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
@@ -20,20 +22,23 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             VALUES (?, ?, ?, ?, ?)
             """;
     private static final String GET_FILM_BY_ID_SQL = """
-            SELECT id, name, description, release_date, duration, mpa_id
-            FROM films
-            WHERE id = ?
+            SELECT f.id, f.name, f.description, f.release_date, f.duration, m.id AS mpa_id, m.name AS mpa_name
+            FROM films AS f
+            LEFT JOIN mpa AS m ON f.mpa_id = m.id
+            WHERE f.id = ?
             """;
     private static final String GET_ALL_FILMS_SQL = """
-            SELECT id, name, description, release_date, duration, mpa_id
-            FROM films
-            ORDER BY id
+            SELECT f.id, f.name, f.description, f.release_date, f.duration, m.id AS mpa_id, m.name AS mpa_name
+            FROM films AS f
+            LEFT JOIN mpa AS m ON f.mpa_id = m.id
+            ORDER BY f.id
             """;
     private static final String GET_POPULAR_FILMS_SQL = """
-            SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+            SELECT f.id, f.name, f.description, f.release_date, f.duration, m.id AS mpa_id, m.name AS mpa_name
             FROM films AS f
+            LEFT JOIN mpa AS m ON f.mpa_id = m.id
             LEFT JOIN film_likes AS fl ON f.id = fl.film_id
-            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, m.id, m.name
             ORDER BY COUNT(fl.user_id) DESC, f.id
             LIMIT ?
             """;
@@ -49,11 +54,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             """;
     private static final String REMOVE_LIKE_SQL = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
     private static final String GET_LIKES_SQL = "SELECT user_id FROM film_likes WHERE film_id = ?";
-    private static final String GET_GENRE_IDS_SQL = """
-            SELECT genre_id
-            FROM film_genres
-            WHERE film_id = ?
-            ORDER BY genre_id
+    private static final String GET_GENRES_SQL = """
+            SELECT g.id, g.name
+            FROM film_genres f
+            JOIN genres g ON g.id = f.genre_id
+            WHERE f.film_id = ?
+            ORDER BY f.genre_id
             """;
     private static final String DELETE_GENRES_SQL = "DELETE FROM film_genres WHERE film_id = ?";
     private static final String ADD_GENRE_SQL = """
@@ -90,16 +96,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public Collection<Film> getAllFilms() {
-        Collection<Film> films = findMany(GET_ALL_FILMS_SQL);
-        films.forEach(this::loadRelatedData);
-        return films;
+        return findMany(GET_ALL_FILMS_SQL);
     }
 
     @Override
     public Collection<Film> getPopularFilms(int count) {
-        Collection<Film> films = findMany(GET_POPULAR_FILMS_SQL, count);
-        films.forEach(this::loadRelatedData);
-        return films;
+        return findMany(GET_POPULAR_FILMS_SQL, count);
     }
 
     @Override
@@ -139,19 +141,13 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     private void loadLikes(Film film) {
-        Set<Long> likes = new HashSet<>(jdbc.queryForList(GET_LIKES_SQL, Long.class, film.getId()));
-        film.setLikes(likes);
+        List<Long> likes = jdbc.queryForList(GET_LIKES_SQL, Long.class, film.getId());
+        film.setLikes(new HashSet<>(likes));
     }
 
     private void loadGenres(Film film) {
-        Set<Genre> genres = new LinkedHashSet<>();
-        jdbc.queryForList(GET_GENRE_IDS_SQL, Long.class, film.getId())
-                .forEach(genreId -> {
-                    Genre genre = new Genre();
-                    genre.setId(genreId);
-                    genres.add(genre);
-                });
-        film.setGenres(genres);
+        List<Genre> genres = jdbc.query(GET_GENRES_SQL, new GenreRowMapper(), film.getId());
+        film.setGenres(new LinkedHashSet<>(genres));
     }
 
     private void loadRelatedData(Film film) {
@@ -165,8 +161,13 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             return;
         }
 
-        for (Genre genre : film.getGenres()) {
-            update(ADD_GENRE_SQL, film.getId(), genre.getId());
+        List<Object[]> batchArgs = new ArrayList<>();
+        List<Genre> genres = new ArrayList<>(film.getGenres());
+
+        for (Genre genre : genres) {
+            batchArgs.add(new Object[]{film.getId(), genre.getId()});
         }
+
+        jdbc.batchUpdate(ADD_GENRE_SQL, batchArgs);
     }
 }
