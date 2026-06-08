@@ -69,18 +69,14 @@ class UserDbStorageIntegrationTest {
 
         userStorage.addFriend(user.getId(), friend.getId());
 
-        assertThat(userStorage.getUserById(user.getId()))
-                .isPresent()
-                .hasValueSatisfying(foundUser -> assertThat(foundUser.getFriends()).containsExactly(friend.getId()));
-        assertThat(userStorage.getUserById(friend.getId()))
-                .isPresent()
-                .hasValueSatisfying(foundFriend -> assertThat(foundFriend.getFriends()).isEmpty());
+        assertThat(userStorage.getUserFriends(user.getId()))
+                .extracting("id")
+                .containsExactly(friend.getId());
+        assertThat(userStorage.getUserFriends(friend.getId())).isEmpty();
 
         userStorage.removeFriend(user.getId(), friend.getId());
 
-        assertThat(userStorage.getUserById(user.getId()))
-                .isPresent()
-                .hasValueSatisfying(foundUser -> assertThat(foundUser.getFriends()).isEmpty());
+        assertThat(userStorage.getUserFriends(user.getId())).isEmpty();
     }
 
     @Test

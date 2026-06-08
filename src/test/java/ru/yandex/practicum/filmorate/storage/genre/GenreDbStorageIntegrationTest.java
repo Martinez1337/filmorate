@@ -55,13 +55,13 @@ class GenreDbStorageIntegrationTest {
 
         genreStorage.setGenresForFilm(filmId, Set.of(thirdGenre, firstGenre));
 
-        assertThat(genreStorage.getGenresForFilms(List.of(filmId)).get((int) filmId))
+        assertThat(genreStorage.getGenresForFilms(List.of(filmId)).get(filmId))
                 .extracting("id")
                 .containsExactly(1L, 3L);
 
         genreStorage.deleteGenresFromFilm(filmId);
 
-        assertThat(genreStorage.getGenresForFilms(List.of(filmId))).doesNotContainKey((int) filmId);
+        assertThat(genreStorage.getGenresForFilms(List.of(filmId))).doesNotContainKey(filmId);
     }
 
     private long createFilm() {
