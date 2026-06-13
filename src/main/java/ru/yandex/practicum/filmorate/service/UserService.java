@@ -11,9 +11,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -22,7 +20,7 @@ public class UserService {
     private final UserMapper userMapper;
 
     public UserService(
-            @Qualifier("inMemoryUserStorage") UserStorage userStorage,
+            @Qualifier("userDbStorage") UserStorage userStorage,
             UserMapper userMapper
     ) {
         this.userStorage = userStorage;
@@ -51,63 +49,54 @@ public class UserService {
                 .toList();
     }
 
-    public UserDto findById(Long id) {
+    public UserDto findById(long id) {
         User user = getUserOrThrow(id);
         log.info("User: {}", user);
         return userMapper.mapToDto(user);
     }
 
-    public void deleteById(Long id) {
+    public void deleteById(long id) {
         getUserOrThrow(id);
         userStorage.deleteUserById(id);
         log.info("Deleted user: {}", id);
     }
 
-    public void addFriend(Long userId, Long friendId) {
+    public void addFriend(long userId, long friendId) {
         validateFriendId(userId, friendId);
 
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        userStorage.addFriend(userId, friendId);
     }
 
-    public void removeFriend(Long userId, Long friendId) {
+    public void removeFriend(long userId, long friendId) {
         validateFriendId(userId, friendId);
 
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        userStorage.removeFriend(userId, friendId);
     }
 
-    public Collection<UserDto> getFriends(Long userId) {
-        User user = getUserOrThrow(userId);
-
-        return user.getFriends().stream()
-                .map(this::getUserOrThrow)
+    public Collection<UserDto> getFriends(long userId) {
+        getUserOrThrow(userId);
+        return userStorage.getUserFriends(userId).stream()
                 .map(userMapper::mapToDto)
                 .toList();
     }
 
-    public Collection<UserDto> getCommonFriends(Long userId,  Long friendId) {
+    public Collection<UserDto> getCommonFriends(long userId,  long friendId) {
         validateFriendId(userId, friendId);
+        getUserOrThrow(userId);
+        getUserOrThrow(friendId);
 
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-
-        Set<Long> commonFriends = new HashSet<>(user.getFriends());
-        commonFriends.retainAll(friend.getFriends());
-
-        return commonFriends.stream()
-                .map(this::getUserOrThrow)
+        return userStorage.getCommonFriends(userId, friendId).stream()
                 .map(userMapper::mapToDto)
                 .toList();
     }
 
-    private void validateFriendId(Long userId, Long friendId) {
+    private void validateFriendId(long userId, long friendId) {
         if (Objects.equals(userId, friendId)) {
             throw new ValidationException("A friend cannot have the same id");
         }

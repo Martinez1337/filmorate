@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -7,10 +8,12 @@ import ru.yandex.practicum.filmorate.dto.validation.annotation.MinDate;
 import ru.yandex.practicum.filmorate.dto.validation.groups.OnUpdate;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Data
 @Accessors(chain = true)
-public class FilmDto {
+public class FilmRequestDto {
     @NotNull(groups = OnUpdate.class)
     @Positive(groups = OnUpdate.class)
     private Long id;
@@ -29,4 +32,9 @@ public class FilmDto {
     @NotNull(message = "{film.duration.notnull}")
     @Positive(message = "{film.duration.positive}")
     private Integer duration;
+
+    @Valid
+    private IdDto mpa;
+
+    private Set<@Valid IdDto> genres = new LinkedHashSet<>();
 }

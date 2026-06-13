@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.FilmRequestDto;
+import ru.yandex.practicum.filmorate.dto.FilmResponseDto;
 import ru.yandex.practicum.filmorate.dto.validation.groups.OnUpdate;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -21,25 +22,27 @@ public class FilmController {
     private final FilmService filmService;
 
     @PostMapping
-    public FilmDto createFilm(@Valid @RequestBody FilmDto filmDto) {
-        log.info("Received a request to create a movie: {}", filmDto);
-        return filmService.create(filmDto);
+    public FilmResponseDto createFilm(@Valid @RequestBody FilmRequestDto filmRequestDto) {
+        log.info("Received a request to create a movie: {}", filmRequestDto);
+        return filmService.create(filmRequestDto);
     }
 
     @PutMapping
-    public FilmDto updateFilm(@Validated({Default.class, OnUpdate.class}) @RequestBody FilmDto filmDto) {
-        log.info("Received a request to update the movie with id: {}", filmDto.getId());
-        return filmService.update(filmDto);
+    public FilmResponseDto updateFilm(
+            @Validated({Default.class, OnUpdate.class}) @RequestBody FilmRequestDto filmRequestDto
+    ) {
+        log.info("Received a request to update the movie with id: {}", filmRequestDto.getId());
+        return filmService.update(filmRequestDto);
     }
 
     @GetMapping("/{id}")
-    public FilmDto getFilmById(@Positive @PathVariable Long id) {
+    public FilmResponseDto getFilmById(@Positive @PathVariable Long id) {
         log.info("Received a request to get the film with id: {}", id);
         return filmService.findById(id);
     }
 
     @GetMapping
-    public Collection<FilmDto> findAll() {
+    public Collection<FilmResponseDto> findAll() {
         log.info("A request for a list of all films has been received");
         return filmService.findAll();
     }
@@ -69,7 +72,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<FilmDto> getPopularFilms(
+    public Collection<FilmResponseDto> getPopularFilms(
             @RequestParam(defaultValue = "10") @Positive int count
     ) {
         log.info("Received a request to get the popular films has been received");

@@ -9,11 +9,23 @@ public interface UserStorage {
 
     User createUser(User user);
 
-    Optional<User> getUserById(Long id);
+    Optional<User> getUserById(long id);
 
     Collection<User> getAllUsers();
 
     Optional<User> updateUser(User user);
 
-    void deleteUserById(Long id);
+    void deleteUserById(long id);
+
+    default void addFriend(long userId, long friendId) {
+        getUserById(userId).ifPresent(user -> user.getFriends().add(friendId));
+    }
+
+    default void removeFriend(long userId, long friendId) {
+        getUserById(userId).ifPresent(user -> user.getFriends().remove(friendId));
+    }
+
+    Collection<User> getUserFriends(long userId);
+
+    Collection<User> getCommonFriends(long userId, long friendId);
 }
